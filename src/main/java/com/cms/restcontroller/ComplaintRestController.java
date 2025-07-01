@@ -20,12 +20,18 @@ public class ComplaintRestController {
     @Autowired
     ComplaintService complaintService;
 
-    @PostMapping("/complaints")
+    @PostMapping("/raiseComplaints")
     public ResponseEntity<Complaint> raiseComplaint(@RequestBody Complaint complaint) {
         complaint.setStatus(Status.OPEN);
         complaint.setRaisedOn(LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(complaintService.save(complaint));
+    }
+
+    @GetMapping("/CheckStatus/{id}")
+    public ResponseEntity<Status> CheckStatus(@PathVariable ("id") long id) {
+       Optional<Complaint> returnedComplaint=complaintService.findById(id);
+        return returnedComplaint.map(complaint -> ResponseEntity.ok().body(complaint.getStatus())).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/getAllComplaints")

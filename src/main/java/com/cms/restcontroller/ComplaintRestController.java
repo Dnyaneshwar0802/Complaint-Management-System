@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/complaintrc")
@@ -34,5 +37,47 @@ public class ComplaintRestController {
 //        }
         return ResponseEntity.ok(complaintService.findAll());
     }
-    
+
+    @PutMapping("/updateStatus/{id}/status")
+    public ResponseEntity<String> updateStatus(
+            @PathVariable Long id,
+            @RequestParam Status newStatus) {
+
+        Optional<Complaint> complaint = complaintService.findById(id);
+        if(complaint.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+
+        Status currentStatus = complaint.get().getStatus();
+
+        if (currentStatus == Status.RESOLVED) {
+            return ResponseEntity.badRequest().body("Cannot update a resolved complaint.");
+        }
+
+        boolean isValid =
+                (currentStatus == Status.OPEN && (newStatus == Status.IN_PROGRESS || newStatus == Status.RESOLVED)) ||
+                        (currentStatus == Status.IN_PROGRESS && newStatus == Status.RESOLVED);
+
+        if (!isValid) {
+            return ResponseEntity.badRequest()
+                    .body("Invalid status transition from " + currentStatus + " to " + newStatus);
+        }
+
+        complaint.get().setStatus(newStatus);
+        if (newStatus == Status.RESOLVED) {
+            complaint.get().setResolvedOn(LocalDateTime.now());
+        }
+
+        complaintService.save(complaint.get());
+        return ResponseEntity.ok("Status updated successfully.");
+    }
+    @GetMapping("/statusCount")
+    public ResponseEntity<Map<Status, Long>> getStatusCounts() {
+        List<Complaint> complaints = complaintService.findAll();
+
+        Map<Status, Long> statusCounts = complaints.stream()
+                .collect(Collectors.groupingBy(Complaint::getStatus, Collectors.counting()));
+
+        return ResponseEntity.ok(statusCounts);
+    }
 }

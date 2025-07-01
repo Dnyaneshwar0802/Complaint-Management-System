@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ComplaintServiceImpl implements ComplaintService {
@@ -20,5 +21,11 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public List<Complaint> findAll() {
         return complaintRepository.findAll();
+    }
+
+    @Override
+    public Optional<Complaint> findById(Long id) {
+
+        return complaintRepository.findById(id);
     }
 }
